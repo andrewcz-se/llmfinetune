@@ -6,7 +6,8 @@ The goal was to transform unstructured clinical narrative text into strictly for
 
 * **Hallucination:** The base models often invent fields (e.g., extracting symptoms when the schema requires reasonCode).  
 * **Verbosity:** The base models tend to be 'chatty' wrapping JSON in conversational text, breaking downstream parsers. The smaller Qwen models I use are often affected by this. 
-* **Hardware Constraints:** Running full-precision models locally is cost-prohibitive.
+
+Lastly, I wanted to test the capabilities of Groq's Speech to Text models, specifically Whisper. Whilst not true Realtime Speech to Text, the standard modes are extremely quick. This project offered a good usecase for dictation as in real world scenarios clinicians and healthcare workers would expect dictation to record clinical notes, and would not expect to have to type in their text. So, in the manual testing web page application I have included a dictate button. This records the users input and sends it to Whisper via Groq's AI SDK and returns the text. This is suprisingly fast, and results are returned almost instantly once the reording is stopped.
 
 ## My Approach
 
@@ -69,7 +70,7 @@ As mentioned above, to prove the model wasn't just leveraging pre-trained knowle
 
 **Purpose:** A Flask-based web interface for real-time A/B testing.
 
-* **Function:** Serves a local web page where users can input custom clinical note text.  
+* **Function:** Serves a local web page where users can input custom clinical note text via text, or dictation transcriped by Whisper via Groq.  
 * **Key Logic:** Loads the base model once and uses a **Context Manager** to dynamically attach/detach the LoRA adapters allowing for side-by-side comparison without doubling VRAM usage.  
 * **Tech Stack:** Python, Flask, PyTorch (Native inference, no external API/Ollama etc required).
 

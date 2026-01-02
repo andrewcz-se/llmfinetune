@@ -3,6 +3,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from peft import PeftModel
 import os
+from groq import Groq  
 
 app = Flask(__name__)
 
@@ -18,31 +19,34 @@ def load_model():
     global model, tokenizer
     print("Loading model into VRAM... this might take a minute.")
     
-    # 1. 4-Bit Config (Same as training)
+    # 1. 4-Bit Config 
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type="nf4",
         bnb_4bit_compute_dtype=torch.float16,
     )
 
-    # 2. Load Base Model
+    # 2. Load Base Model 
     base_model = AutoModelForCausalLM.from_pretrained(
         BASE_MODEL_ID,
         quantization_config=bnb_config,
         device_map="auto",
-        attn_implementation="eager", # avoid MoM on my 1070
+        attn_implementation="eager", # Critical for GTX 1070
         torch_dtype=torch.float16
     )
     
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL_ID)
 
-    # 3. Attach Adapter and load the PeftModel on top. 
-
+    # 3. Attach Adapter 
+    # Load the PeftModel on top. 
     model = PeftModel.from_pretrained(base_model, ADAPTER_PATH)
     print("Model loaded successfully!")
 
 # Load on startup
-load_model()
+try:
+    load_model()
+except Exception as e:
+    print(f"Warning: Could not load local LLM models. Inference will fail. Error: {e}")
 
 def run_inference(prompt, use_adapter=True):
     # Prompt Template (No Schema Definition - Blind Test)
@@ -77,6 +81,9 @@ def compare():
     data = request.json
     prompt = data.get('prompt', '')
     
+    if not prompt:
+        return jsonify({"error": "Empty prompt"}), 400
+
     # Run Base Model
     base_output = run_inference(prompt, use_adapter=False)
     
@@ -87,6 +94,37 @@ def compare():
         "base": base_output,
         "tuned": tuned_output
     })
+
+@app.route('/api/transcribe', methods=['POST'])
+def transcribe():
+    if 'audio' not in request.files:
+        return jsonify({'error': 'No audio file provided'}), 400
+    
+    audio_file = request.files['audio']
+    
+    # Ensure API Key is present
+    api_key = os.environ.get("GROQ_API_KEY")
+    if not api_key:
+        return jsonify({'error': 'GROQ_API_KEY not set in server environment'}), 500
+
+    try:
+        # Initialize Groq client
+        client = Groq(api_key=api_key)
+        
+        # Send to Groq Whisper
+        transcription = client.audio.transcriptions.create(
+            file=(audio_file.filename, audio_file.read()), 
+            model="whisper-large-v3",
+            response_format="json",
+            language="en",
+            temperature=0.0
+        )
+        
+        return jsonify({'text': transcription.text})
+        
+    except Exception as e:
+        print(f"Transcription Error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
