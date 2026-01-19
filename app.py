@@ -51,7 +51,7 @@ except Exception as e:
 def run_inference(prompt, use_adapter=True):
     # Prompt Template (No Schema Definition - Blind Test)
     messages = [
-        {"role": "system", "content": "Extract clinical data into strict Solaris-compliant JSON."},
+        {"role": "system", "content": "Extract clinical data into strict Sunrise-compliant JSON."},
         {"role": "user", "content": prompt}
     ]
     

@@ -1,8 +1,8 @@
 ## Fine Tuning a Local LLM Model
 
-In some of my previous projects I have experimented with **FHIR** (Solaris FHIR Viewer that provides basic management and viewing of FHIR data, along with Clinical AI Summaries) and **RAG Retrieval** (creating a custom PDF parser, ingesting it into a local LLM instance and then letting a user search the documents) so next i wanted to try fine tuning a local LLM for a related high precision extraction task.
+In some of my previous projects I have experimented with **FHIR** (Sunrise FHIR Viewer that provides basic management and viewing of FHIR data, along with Clinical AI Summaries) and **RAG Retrieval** (creating a custom PDF parser, ingesting it into a local LLM instance and then letting a user search the documents) so next i wanted to try fine tuning a local LLM for a related high precision extraction task.
 
-The goal was to transform unstructured clinical narrative text into strictly formatted, FHIR like JSON. For this initial project I chose a custom schema the LLM had never seen before, a fictitious schema for my “Solaris EMR”. Given the hardware available this project used **QLoRA (Quantised Low-Rank Adaptation)** to put complex proprietary schemas and logic rules directly into the model weights, achieving higher reliability and lower latency than Zero Shot approaches. I had tried using Zero Shot and prompt engineering to get the LLM in my RAG Retrieval project to output specific schemas from information in my PDF files that had been ingested, and whilst it did work quite successfully had several issues:
+The goal was to transform unstructured clinical narrative text into strictly formatted, FHIR like JSON. For this initial project I chose a custom schema the LLM had never seen before, a fictitious schema for my “Sunrise EMR”. Given the hardware available this project used **QLoRA (Quantised Low-Rank Adaptation)** to put complex proprietary schemas and logic rules directly into the model weights, achieving higher reliability and lower latency than Zero Shot approaches. I had tried using Zero Shot and prompt engineering to get the LLM in my RAG Retrieval project to output specific schemas from information in my PDF files that had been ingested, and whilst it did work quite successfully had several issues:
 
 * **Hallucination:** The base models often invent fields (e.g., extracting symptoms when the schema requires reasonCode).  
 * **Verbosity:** The base models tend to be 'chatty' wrapping JSON in conversational text, breaking downstream parsers. The smaller Qwen models I use are often affected by this. 
@@ -19,7 +19,7 @@ I used **LoRA (Low-Rank Adaptation)** to attach small, trainable rank decomposit
 
 As mentioned above, to prove the model wasn't just leveraging pre-trained knowledge, I engineered a synthetic dataset with specific traps and rules that a base model would never guess:
 
-* **The JSON Schema:** I defined a custom resourceType: 'SolarisEMRClinicalSummary'. If the model outputs standard FHIR Resource or JSON schema, I know the fine-tuning failed.  
+* **The JSON Schema:** I defined a custom resourceType: 'SunriseEMRClinicalSummary'. If the model outputs standard FHIR Resource or JSON schema, I know the fine-tuning failed.  
 * **Strict Logic Rules:**  
   * **Unit Separation:** Meds doses 500mg must be split into {'value': 500, 'unit': 'mg'}.  
   * **Null Handling:** If a patient's age is not explicitly mentioned, the field ageInt must be null.   
@@ -65,7 +65,7 @@ Training on my **GTX 1070 Ti** presented some unique challenges due to its lack 
 I developed a Python script (**evaluate_and_plot.py**) to run tests between the base model and my tuned adapter, and to plot a Loss Curve to chart the training outcome. The script loads the Base Model, then dynamically merges the LoRA weights into memory. It feeds unstructured text prompts without the JSON schema definition and measures outcomes, for example:
 
 * Did it generate valid JSON?  
-* Did it output the SolarisEMRClinicalExtract schema?  
+* Did it output the SunriseEMRClinicalExtract schema?  
 * Did it output null for missing ages?  
 * Did it correctly add repetitions for multiple medications?
 

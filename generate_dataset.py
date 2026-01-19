@@ -93,7 +93,7 @@ def generate_sample(is_training=True):
     note = random.choice(templates)
     
     target_json = {
-        "resourceType": "SolarisEMRClinicalSummary", 
+        "resourceType": "SunriseEMRClinicalSummary", 
         "status": "finished",
         "subject": {
             "reference": f"Patient/{name.replace(' ', '')}",
@@ -110,7 +110,7 @@ def generate_sample(is_training=True):
     
     return {
         "messages": [
-            {"role": "system", "content": "Extract clinical data into strict Solaris-compliant JSON."},
+            {"role": "system", "content": "Extract clinical data into strict Sunrise-compliant JSON."},
             {"role": "user", "content": note},
             {"role": "assistant", "content": json.dumps(target_json)}
         ]

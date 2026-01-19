@@ -71,7 +71,7 @@ TEST_SUITE = [
 
 def generate_response(model, tokenizer, text):
     messages = [
-        {"role": "system", "content": "Extract clinical data into strict Solaris-compliant JSON."},
+        {"role": "system", "content": "Extract clinical data into strict Sunrise-compliant JSON."},
         {"role": "user", "content": text}
     ]
     text_input = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
@@ -90,7 +90,7 @@ def clean_for_md(text):
 def analyze_output(json_str, test_case):
     try:
         data = json.loads(json_str)
-        if data.get("resourceType") != "SolarisEMRClinicalSummary":
+        if data.get("resourceType") != "SunriseEMRClinicalSummary":
             return {"status": "FAIL", "detail": "Wrong ResourceType"}
         
         subj = data.get("subject", {})
